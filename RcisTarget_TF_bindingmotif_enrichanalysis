@@ -1,0 +1,91 @@
+library(RcisTarget)
+library(reshape2)
+library(DT)
+library(visNetwork)
+library(tidyverse)
+
+geneList1  <- read_tsv("genes.txt")
+geneLists <- list(geneListName=geneList1)
+data(motifAnnotations_hgnc)
+motifEnrichmentTable_wGenes <- cisTarget(geneLists$geneListName$Symbol, motifRankings,
+                                         motifAnnot=motifAnnotations_hgnc)
+motifs_AUC <- calcAUC(geneLists$geneListName$Symbol, motifRankings, nCores=1)
+auc <- getAUC(motifs_AUC)
+
+hist(auc, main="ResVSNores", xlab="AUC histogram",
+     breaks=100, col="#ff000050", border="darkred")
+nes3 <- (3*sd(auc)) + mean(auc)
+abline(v=nes3, col="red")
+
+motifEnrichmentTable <- addMotifAnnotation(motifs_AUC, nesThreshold=3,
+                                           motifAnnot=motifAnnotations_hgnc)
+dim(motifEnrichmentTable)
+head(motifEnrichmentTable[,-"TF_lowConf", with=FALSE])
+
+motifEnrichmentTable_wGenes <- addSignificantGenes(motifEnrichmentTable,
+                                                   rankings=motifRankings, 
+                                                   geneSets=geneLists)
+dim(motifEnrichmentTable_wGenes)
+
+motifEnrichmentTable_wGenes_wLogo <- addLogo(motifEnrichmentTable_wGenes)
+
+resultsSubset <- motifEnrichmentTable_wGenes_wLogo[1:10,]
+
+motifEnrichmentTable_wGenes <- addSignificantGenes(motifEnrichmentTable,
+                                                   rankings=motifRankings, 
+                                                   geneSets=geneLists$geneListName$Symbol)
+dim(motifEnrichmentTable_wGenes)
+
+head(motifEnrichmentTable_wGenes)
+
+#########################
+geneSetName <- "hypoxia"
+selectedMotifs <- c("cisbp__M6275", sample(motifEnrichmentTable$motif, 2))
+par(mfrow=c(2,2))
+getSignificantGenes(geneLists[[geneSetName]], 
+                    motifRankings,
+                    signifRankingNames=selectedMotifs,
+                    plotCurve=TRUE, maxRank=5000, genesFormat="none",
+                    method="aprox")
+################################
+
+motifEnrichmentTable_wGenes_wLogo <- addLogo(motifEnrichmentTable_wGenes)
+
+resultsSubset <- motifEnrichmentTable_wGenes_wLogo[1:10,]
+
+
+datatable(resultsSubset[,-c("enrichedGenes", "TF_lowConf"), with=FALSE], 
+          escape = FALSE, # To show the logo
+          filter="top", options=list(pageLength=5))
+
+anotatedTfs <- lapply(split(motifEnrichmentTable_wGenes$TF_highConf,
+                            motifEnrichmentTable$geneSet),
+                      function(x) {
+                          genes <- gsub(" \\(.*\\). ", "; ", x, fixed=FALSE)
+                          genesSplit <- unique(unlist(strsplit(genes, "; ")))
+                          return(genesSplit)
+                      })
+
+signifMotifNames <- motifEnrichmentTable$motif[1:3]
+
+incidenceMatrix <- getSignificantGenes(geneLists$geneListName$Symbol, 
+                                       motifRankings,
+                                       signifRankingNames=signifMotifNames,
+                                       plotCurve=TRUE, maxRank=5000, 
+                                       genesFormat="incidMatrix",
+                                       method="aprox")$incidMatrix
+
+edges <- melt(incidenceMatrix)
+edges <- edges[which(edges[,3]==1),1:2]
+colnames(edges) <- c("from","to")
+motifs <- unique(as.character(edges[,1]))
+genes <- unique(as.character(edges[,2]))
+nodes <- data.frame(id=c(motifs, genes),   
+                    label=c(motifs, genes),    
+                    title=c(motifs, genes), # tooltip 
+                    shape=c(rep("diamond", length(motifs)), rep("elypse", length(genes))),
+                    color=c(rep("purple", length(motifs)), rep("skyblue", length(genes))))
+visNetwork(nodes, edges) %>% visOptions(highlightNearest = TRUE, 
+                                        nodesIdSelection = TRUE)
+
+
