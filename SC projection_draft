@@ -1,0 +1,40 @@
+library(SingleCellExperiment)
+library(scmap)
+library(tidyverse) 
+library(ggplot2) 
+
+
+
+x <- read.csv('matrix.csv', comment = "#", check.names = FALSE)
+
+ann <- read.csv('ann1.csv', check.names=FALSE)
+
+
+rownames(x) <- make.names(x[,1], unique = TRUE)
+
+x <- x[,-1]
+
+
+sce <- SingleCellExperiment(assays = list(normcounts = as.matrix(x)), colData = ann)
+
+rownames(ann) <- make.names(ann[,1], unique = TRUE)
+
+ann <- ann[,-1]
+
+logcounts(sce) <- log2(normcounts(sce) + 1)
+
+rowData(sce)$feature_symbol <- rownames(sce)
+
+sce <- sce[!duplicated(rownames(sce)), ]
+
+sce <- selectFeatures(sce, suppress_plot = FALSE)
+sce <- indexCluster(sce, cluster_col = 'X')
+
+heatmap(as.matrix(metadata(sce)$scmap_cluster_index))
+
+scmapCluster_results <- scmapCluster(
+  projection = sce, 
+  index_list = list(
+    yan = metadata(sce)$scmap_cluster_index
+  )
+)
