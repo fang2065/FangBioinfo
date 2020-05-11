@@ -1,0 +1,120 @@
+library(DOSE)
+library(org.Hs.eg.db)
+library(topGO)
+library(clusterProfiler)
+library(pathview)
+library(enrichplot)
+
+#resannot <- resannot[!duplicated(resannotsort1$Entrez), ]
+
+
+#you can undergo the analysis using one same DE gene list in 3 different way
+resannotsort1<-resannot %>% dplyr::filter(FDR < 0.1)
+resannotsort_UP<-resannot %>% dplyr::filter(logFC>0 & FDR < 0.1)
+resannotsort_DN<-resannot %>% dplyr::filter(logFC<0 & FDR < 0.1)
+
+#for example, take all DE genes and search for BP term 
+gene1_go <- as.character(resannotsort1$Entrez)
+ego_BP <- enrichGO(gene = gene1_go, 
+                    OrgDb = org.Hs.eg.db, 
+                    ont = "bp", 
+                    pAdjustMethod = "fdr", 
+                    pvalueCutoff = 0.05, 
+	                  minGSSize = 50, 
+                    maxGSSize = 1750,
+                    qvalueCutoff = 0.05,
+                    readable = TRUE)
+
+ego_all <- enrichGO(gene = gene1_go, 
+                    OrgDb = org.Hs.eg.db, 
+                    ont = "all", 
+                    pAdjustMethod = "fdr", 
+                    pvalueCutoff = 0.05, 
+	                  minGSSize = 50, 
+                    maxGSSize = 1750,
+                    qvalueCutoff = 0.05,
+                    readable = TRUE)
+
+ego_BP_simplify <- simplify(ego_all, cutoff=0.7, by="p.adjust", select_fun=min) 
+png(file="dotplot.png", width=1200, height=1200, title = "Enriched Pathways_BP", font.size = 8)
+dotplot(ego_BP,showCategory=20, font.size = 8)
+dev.off()
+
+write.csv(go_up@resulr, paste0('go_term_allDEgenes'))
+
+
+png(file="all_goterm.png", width=1200, height=1200, font.size = 8)
+barplot(go_all, split = "ONTOLOGY", font.size = 10) +
+	facet_grid(ONTOLOGY~., scale = "free")+
+	scale_x_discrete(labels = function(x) str_wrap(x, width = 50))
+dev.off()
+
+#KEGG dataset
+
+ekk <- enrichKEGG(gene         = gene1_go,
+                  organism     = 'hsa',
+                  pvalueCutoff = 0.05)
+write.table(ekk, file="KEGG.txt", sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+topKEGG <- head(KEGG$ID,10)
+    for (i in topKEGG) {
+        logFC <- resannot$logFC
+        names(logFC) <- resannot$Entrez
+        pathview(gene.data = logFC, pathway.id = i, species = "hsa", limit = list(gene=5, cpd=1))
+    }
+}
+
+
+
+
+##  numeric vector -> named vector -> decreasing orde
+gene_all = resannot$logFC
+names(gene_all) = as.character(resannotsort1$Entrez)
+gene_all = sort(gene_all, decreasing = TRUE)
+
+ego_all <- gseGO(geneList     = gene_all,
+              OrgDb        = org.Hs.eg.db,
+              ont          = "All",
+              nPerm        = 1000,
+              minGSSize    = 100,
+              maxGSSize    = 500,
+              pvalueCutoff = 0.05,
+              verbose      = FALSE)
+              
+ekk_all <-  gseKEGG(geneList     = gene1,
+               organism     = 'hsa',
+               nPerm        = 1000,
+               minGSSize    = 120,
+               pvalueCutoff = 0.05,
+               verbose      = FALSE)
+browseKEGG(ekk_all, 'hsa04110') #'hsa04110' is just an example
+
+#GESA for DE genes  
+#gmt files are downloaded from https://www.gsea-msigdb.org/gsea/downloads.jsp
+hallmark <- read.gmt("h.all.v7.1.entrez.gmt")
+c1 <- read.gmt("c1.all.v7.1.entrez.gmt")
+c2 <- read.gmt("c2.all.v7.1.entrez.gmt")
+c3_TF <- read.gmt("c3.tft.v7.1.entrez.gmt")
+c3_Mi <- read.gmt("c3.mir.v7.1.entrez.gmt")
+c5 <- read.gmt("c5.all.v7.1.entrez.gmt")
+
+
+egmt_all_h <- GSEA(gene_all, TERM2GENE = hallmark, pvalueCutoff = 0.05)
+write.table(egmt_all_h, file="hallmark_all.txt", sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+
+png(file="dotplot.png", width=1200, height=1200)
+dotplot(egmt_all_h, showCategory = 10, split = ".sign") + facet_grid(~.sign)
+dev.off()
+
+
+png(file="ridgeplot.png", width=1200, height=1200)
+ridgeplot(egmt_all_h, showCategory = 10)
+dev.off()
+
+# select one term to draw the plot 
+gseaplot2(egmt_all_h, geneSetID = egmt$ID[I], title = egmt$Description[i])
+# select 10 terms to draw the plot
+top10 <- c(1:10)
+for (i in top10) {
+    png(file=paste("MSigDB",i,".png"), width=1200, height=800)
+    gseaplot2(egmt_all_h, geneSetID = egmt_all_h[i]$ID, title = egmt_all_h[i]$Description)
+    dev.off()}
