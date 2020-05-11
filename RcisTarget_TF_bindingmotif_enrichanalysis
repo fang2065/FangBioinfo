@@ -38,16 +38,6 @@ dim(motifEnrichmentTable_wGenes)
 
 head(motifEnrichmentTable_wGenes)
 
-#########################
-geneSetName <- "hypoxia"
-selectedMotifs <- c("cisbp__M6275", sample(motifEnrichmentTable$motif, 2))
-par(mfrow=c(2,2))
-getSignificantGenes(geneLists[[geneSetName]], 
-                    motifRankings,
-                    signifRankingNames=selectedMotifs,
-                    plotCurve=TRUE, maxRank=5000, genesFormat="none",
-                    method="aprox")
-################################
 
 motifEnrichmentTable_wGenes_wLogo <- addLogo(motifEnrichmentTable_wGenes)
 
