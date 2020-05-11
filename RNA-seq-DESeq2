@@ -1,7 +1,7 @@
 library(DESeq2)
 library(tidyverse)
 
-## import data
+## import data 
 sampleinfo <- read_tsv("samples.txt")
 seqdata <- read_tsv("counts.txt", comment="#")
 
@@ -19,7 +19,7 @@ library(biomaRt)
 library(ComplexHeatmap)
 library(circlize)
 library(fgsea)
-library("labeling")
+library(labeling)
 library(ggplot2)
 
 ## remove non-expressed genes
@@ -125,12 +125,6 @@ resannot <- as.data.frame(res) %>%
     left_join(annot, "GeneID") %>% 
     rename(logFC=log2FoldChange, FDR=padj)
     
-#draw the heatmap based the log2fold and FDR 
-#resannotsort<-resannot %>% dplyr::filter(log2FoldChange>0.5 | log2FoldChange < (-0.5)&pvalue < 0.01)
-#threshold<-as.factor(
-    (res$logFC > 0.5 | logFC < (-0.5)& pvalue < 0.01))
-#ggplot(resannot,aes(x= logFC,
-               y= -1*log10(pvalue),colour=threshold))+xlab("log2 fold-change")+ylab("-log10 p-value")+geom_point() 
 
 ## export results
 resannotsort <- resannot[order(resannot$FDR),]
@@ -140,6 +134,11 @@ write.table(resannotsort, file="Gene_DE.txt", sep="\t", quote=FALSE, row.names=F
 png(file="Phist.png", width=1200, height=1200)
 hist(resannot$pvalue)
 dev.off()
+
+
+resannot <- resannot[!duplicated(resannot$Entrez), ]
+resannot<-resannot %>% dplyr::filter(!is.na(FDR) & !is.na(Entrez))
+
 
 ## MA Plot
 cutoff <- sort(resannot$pvalue)[10]
@@ -152,16 +151,53 @@ ggplot(resannot2, aes(x = log2(baseMean), y=logFC)) +
     labs(x="mean of normalised counts", y="log fold change")
 dev.off()
 
-## Volcano Plot
-filtTab <- resannot2 %>% 
-    filter(!is.na(FDR)) %>% 
-    mutate(`-log10(FDR)` = -log10(FDR))
+## A better Volcano Plot template
+library(ggrepel)
+
+cutoff <- sort(resannot$FDR)[20]
 png(file="Volcanoplot.png", width=1200, height=1200)
-ggplot(filtTab, aes(x = logFC, y=`-log10(FDR)`)) + 
-    geom_point(aes(colour=pvalue < 0.01), size=1) +
-    geom_text(aes(label=TopGeneLabel))
+ggplot(data = resannot, aes(x = logFC, y = -log10(FDR))) +
+  geom_point(data = subset(resannot, resannot$FDR >= 0.05), aes(size = abs(logFC)), color = "black", alpha = 0.1) +
+  geom_point(data = subset(resannot, resannot$FDR<0.05 & resannot$logFC > 2), aes(size = abs(logFC)), color = "red", alpha = 0.1) +
+  geom_point(data = subset(resannot, resannot$FDR<0.05 & resannot$logFC < -2), aes(size = abs(logFC)), color = "darkgreen", alpha = 0.1) +
+  geom_hline(yintercept = -log10(0.05),lty = 4, lwd = 0.6, alpha = 0.8) +
+  geom_vline(xintercept = c(1, -1), lty = 4, lwd = 0.6, alpha = 0.8) +
+  theme_bw() +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  labs(x = "log2 (fold change)", y = "-log10 (FDR)") +
+  theme(legend.position = 'none') +
+  geom_text_repel(data = subset(resannot, resannot$FDR< cutoff), aes(label = Symbol), col = "black", alpha = 0.8)	
 dev.off()
 
+#a large heatmap 
+sigGenes1 <- as.data.frame(resannot) %>% filter(pvalue < 0.01) %>% filter(abs(logFC) > 1) %>% pull("GeneID")
+sigGenes1 <- sigGenes1[1:200]
+Nsig1 <- length(sigGenes1)
+   
+plotDat <- vst(ddsObj)[sigGenes1,] %>% assay()
+z.mat <- t(scale(t(plotDat), center=TRUE, scale=TRUE))
 
 
+myPalette <- c("blue3", "white", "red")
+myRamp = colorRamp2(c(-2, 0, 2), myPalette)
 
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+ha1 = ha_column = HeatmapAnnotation(df = data.frame(status = c(rep("responder", 6), rep("nonresponder", 10))),
+                              col = list(status = c("responder" =  "orange", "nonresponder" = "purple")))
+
+GeneClusters <- as.data.frame(unlist(cutGroups))
+GeneClusters$GeneID <- names(cutGroups)
+write.table(GeneClusters, file="GeneClusters.txt", sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+
+png(file="Heatmap.png", width=1600, height=400+Nsig1*6)
+print(Heatmap(z.mat, name = "z-score",
+        col = myRamp,            
+        show_row_name = FALSE,
+        cluster_columns = TRUE,
+        rect_gp = gpar(col = "darkgrey", lwd=0.5),
+        top_annotation = ha1))
+    dev.off()
