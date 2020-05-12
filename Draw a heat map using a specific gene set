@@ -14,8 +14,7 @@ ensembl = useDataset("hsapiens_gene_ensembl", mart=ensembl)
 attributeNames <- c('external_gene_name')
 ourFilterType <- "ensembl_gene_id"
 filterValues <- rownames(plotDat)
-annot <- getBM(attributes=attributeNames, filters = ourFilterType, values = filterValues, mart = ensembl)
-annot <- as.matrix(annot)
+annot <- getBM(attributes=attributeNames, filters = ourFilterType, values = filterValues, mart = ensembl) %>% as.matrix()
 rownames(plotDat) <- c(annot)
 
 z.mat <- t(scale(t(plotDat), center=TRUE, scale=TRUE))
