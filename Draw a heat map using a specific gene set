@@ -1,6 +1,6 @@
 #you can use the code after the DE analysis of raw count matrix
 #please prepare the gene list first 
-##
+## input the genelist
 ap1 <- read_tsv("ap1.txt")
 ap1 <- t(ap1$converted_alias) #converted_alias here is EntrezGeneIds
 symbols <- as.character(c(ap1))
