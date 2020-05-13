@@ -36,8 +36,8 @@ ego_all <- enrichGO(gene = gene1_go,
                     readable = TRUE)
 
 ego_BP_simplify <- simplify(ego_all, cutoff=0.7, by="p.adjust", select_fun=min) 
-png(file="dotplot.png", width=1200, height=1200, title = "Enriched Pathways_BP", font.size = 8)
-dotplot(ego_BP,showCategory=20, font.size = 8)
+png(file="dotplot.png", width=1200, height=1200)
+dotplot(ego_BP,showCategory=20, font.size = 30)
 dev.off()
 
 write.csv(go_up@resulr, paste0('go_term_allDEgenes'))
