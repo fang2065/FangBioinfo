@@ -116,5 +116,6 @@ gseaplot2(egmt_all_h, geneSetID = egmt$ID[I], title = egmt$Description[i])
 top10 <- c(1:10)
 for (i in top10) {
     png(file=paste("MSigDB",i,".png"), width=1200, height=800)
-    gseaplot2(egmt_all_h, geneSetID = egmt_all_h[i]$ID, title = egmt_all_h[i]$Description)
+    p <- gseaplot2(egmt_all_h, geneSetID = egmt_all_h[i]$ID, title = egmt_all_h[i]$Description)
+    print(p)
     dev.off()}
