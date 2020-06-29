@@ -6,6 +6,7 @@ library(tidyverse)
 
 geneList1  <- read_tsv("genes.txt")
 geneLists <- list(geneListName=geneList1)
+motifRankings <- importRankings("hg19-500bp-upstream-7species.mc9nr.feather")
 data(motifAnnotations_hgnc)
 motifEnrichmentTable_wGenes <- cisTarget(geneLists$geneListName$Symbol, motifRankings,
                                          motifAnnot=motifAnnotations_hgnc)
@@ -24,7 +25,7 @@ head(motifEnrichmentTable[,-"TF_lowConf", with=FALSE])
 
 motifEnrichmentTable_wGenes <- addSignificantGenes(motifEnrichmentTable,
                                                    rankings=motifRankings, 
-                                                   geneSets=geneLists)
+                                                   geneSets=geneLists$geneListName$Symbol)
 dim(motifEnrichmentTable_wGenes)
 
 motifEnrichmentTable_wGenes_wLogo <- addLogo(motifEnrichmentTable_wGenes)
