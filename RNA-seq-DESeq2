@@ -157,7 +157,7 @@ library(ggrepel)
 cutoff <- sort(resannot$FDR)[20]
 png(file="Volcanoplot.png", width=1200, height=1200)
 ggplot(data = resannot, aes(x = logFC, y = -log10(FDR))) +
-  geom_point(data = subset(resannot, resannot$FDR >= 0.05), aes(size = abs(logFC)), color = "black", alpha = 0.1) +
+  geom_point(data = subset(resannot), aes(size = abs(logFC)), color = "black", alpha = 0.1) +
   geom_point(data = subset(resannot, resannot$FDR<0.05 & resannot$logFC > 2), aes(size = abs(logFC)), color = "red", alpha = 0.1) +
   geom_point(data = subset(resannot, resannot$FDR<0.05 & resannot$logFC < -2), aes(size = abs(logFC)), color = "darkgreen", alpha = 0.1) +
   geom_hline(yintercept = -log10(0.05),lty = 4, lwd = 0.6, alpha = 0.8) +
