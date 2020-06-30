@@ -55,7 +55,7 @@ ekk <- enrichKEGG(gene         = gene1_go,
                   organism     = 'hsa',
                   pvalueCutoff = 0.05)
 write.table(ekk, file="KEGG.txt", sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
-topKEGG <- head(KEGG$ID,10)
+topKEGG <- head(ekk@result$ID,10)
     for (i in topKEGG) {
         logFC <- resannot$logFC
         names(logFC) <- resannot$Entrez
