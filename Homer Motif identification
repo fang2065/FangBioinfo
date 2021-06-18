@@ -1,1 +1,3 @@
 conda install -c bioconda homer
+ perl /Users/zijianfang/miniconda3/share/homer-4.10-0/.//configureHomer.pl -install human-p
+findMotifs.pl UKE1S.txt human result/ -start -400 -end 100 -len 6,10 -p 4
