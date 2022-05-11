@@ -111,6 +111,12 @@ ddsObj.raw <- DESeqDataSetFromMatrix(countData = countdata, colData = sampleinfo
 ddsObj <- DESeq(ddsObj.raw)
 res <- results(ddsObj, alpha=0.05)
 
+dds <- estimateSizeFactors(ddsObj.raw)
+sizeFactors(dds)
+normalized_counts <- counts(dds, normalized=TRUE)
+write.table(normalized_counts, file="normalized_counts.txt", sep="\t", quote=F, col.names=NA)
+
+
 ## Annoate
 #ensembl=useMart("ENSEMBL_MART_ENSEMBL", host="www.ensembl.org")
 ensembl=useMart("ENSEMBL_MART_ENSEMBL", host="useast.ensembl.org")
