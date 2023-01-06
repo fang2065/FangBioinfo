@@ -52,11 +52,11 @@ plotIndiv(MyResult.pca)
 SampleID <- c("H1", "H2", "H3", "C1", "C2", "C3")
 Group <-c(rep("C", 3),rep("H", 3))
 sampleinfo <- data.frame(SampleID, Group)%>% 
-  column_to_rownames("SampleID")
+  column_to_rownames("SampleID") # generate sampleinfo file 
 MyResult.splsda <- splsda(countdata, sampleinfo, keepX = c(50,50)) 
 plotIndiv(MyResult.splsda)
 
-
+#two group t test
 calc_ttest <- function(df, groupping, gr1, gr2, maxAdjP, minFC) {
    df <- df[ c( groupping[[gr1]], groupping[[gr2]]  ) ]
    #Log2 fold change group2 - group1
@@ -131,7 +131,7 @@ colnames(design) <- c("Intercept", "Diff")
 res.eb <- eb.fit(countdata[, c(tr,ct)], design)
 
 
-## Annoate 
+## Annoate the UniProt ID 
 mouseUp <- UniProt.ws(10090)
 annot <- select(
   x = mouseUp,
@@ -147,7 +147,7 @@ resannot <- as.data.frame(res.eb) %>%
   rownames_to_column("Accession") %>% 
   left_join(annot, "Accession")
 
-
+##Volcanoplot
 png(file="Volcanoplot_peptide.png", width=800, height=800,res = 125)
 ggplot(data = resannot, aes(x = logFC, y = -log10(p.mod))) +
   geom_point(data = subset(resannot), aes(size = abs(logFC)), color = "black", alpha = 0.1) +
@@ -168,7 +168,8 @@ ggplot(data = resannot, aes(x = logFC, y = -log10(p.mod))) +
                          col = "black", 
                          alpha = 0.8)	
 dev.off()
-
+                
+##downstream functional analysis 
 resannotsort <- resannot[order(resannot$p.mod),]
 write.table(resannotsort, file="Peptide_DE.txt", sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
 
@@ -176,7 +177,7 @@ resannotsort_DN<-resannotsort %>% dplyr::filter(logFC <0.25 & p.mod < 0.01)
 resannotsort_UP<-resannotsort %>% dplyr::filter(logFC >0.25 & p.mod < 0.01)
 
 gene1_dn <- as.character(resannotsort_DN$GeneID)
-
+# GO enrichment analysis
 ego_BP_dn <- enrichGO(gene = gene1_dn,
                  OrgDb = org.Mm.eg.db, 
                  ont = "bp", 
@@ -261,7 +262,7 @@ png(file="dotplot_peptide.png", width=2000, height=700, res = 120)
 cowplot::plot_grid(Downregulated_pathway, Upregulated_pathway)
 dev.off()
 
-
+# GSEA 
 resannotsort_GSEA <-resannotsort %>% dplyr::filter(p.mod < 0.01)
 ## feature 1: numeric vector
 gene_all = resannotsort_GSEA$logFC
