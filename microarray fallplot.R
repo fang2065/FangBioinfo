@@ -67,8 +67,8 @@ Table_PVvsCon <- subset(tT_PVvsCon, select=c("Gene.symbol","adj.P.Val","logFC"))
 resannot_PV <- Table_PVvsCon[!duplicated(Table_PVvsCon$Gene.symbol), ]
 resannot_PV<-resannot_PV %>% dplyr::filter(!is.na(adj.P.Val) & !is.na(Gene.symbol))
 # write.table(tT, file=stdout(), row.names=F, sep="\t")
-trend_PV <-sapply(resannot_PV$logFC, function(x){if(x>0) 'up' else 'down'})
 resannot_PV <- resannot_PV[order(resannot_PV$logFC, decreasing = T),]
+trend_PV <-sapply(resannot_PV$logFC, function(x){if(x>0) 'up' else 'down'})
 pre_ranked_sig_genes_PV <- data.frame(resannot_PV, 'trend' = trend_PV, 'rank' = 1:nrow(resannot_PV), stringsAsFactors = F)
 to_be_point_out_PV <- rbind(pre_ranked_sig_genes_PV[pre_ranked_sig_genes_PV$Gene.symbol == "CD24", ], 
                             pre_ranked_sig_genes_PV[pre_ranked_sig_genes_PV$Gene.symbol == "CD47", ])
@@ -92,8 +92,8 @@ tT_ETvsCon <- topTable(fit2, coef=c("ETvsCon"), adjust="fdr", sort.by="logFC", p
 Table_ETvsCon <- subset(tT_ETvsCon, select=c("Gene.symbol","adj.P.Val","logFC"))
 resannot_ET <- Table_ETvsCon[!duplicated(Table_ETvsCon$Gene.symbol), ]
 resannot_ET <-resannot_ET %>% dplyr::filter(!is.na(adj.P.Val) & !is.na(Gene.symbol))
-trend_ET <-sapply(resannot_ET$logFC, function(x){if(x>0) 'up' else 'down'})
 resannot_ET <- resannot_ET[order(resannot_ET$logFC, decreasing = T),]
+trend_ET <-sapply(resannot_ET$logFC, function(x){if(x>0) 'up' else 'down'})
 pre_ranked_sig_genes_ET <- data.frame(resannot_ET, 'trend' = trend_ET, 'rank' = 1:nrow(resannot_ET), stringsAsFactors = F)
 to_be_point_out_ET <- rbind(pre_ranked_sig_genes_ET[pre_ranked_sig_genes_ET$Gene.symbol == "CD24", ], pre_ranked_sig_genes_ET[pre_ranked_sig_genes_ET$Gene.symbol == "CD47", ])
 
@@ -116,8 +116,8 @@ tT_MFvsCon <- topTable(fit2, coef=c("MFvsCon"), adjust="fdr", sort.by="logFC", p
 Table_MFvsCon <- subset(tT_MFvsCon, select=c("Gene.symbol","adj.P.Val","logFC"))
 resannot_MF <- Table_MFvsCon[!duplicated(Table_MFvsCon$Gene.symbol), ]
 resannot_MF <-resannot_MF %>% dplyr::filter(!is.na(adj.P.Val) & !is.na(Gene.symbol))
-trend_MF <-sapply(resannot_MF$logFC, function(x){if(x>0) 'up' else 'down'})
 resannot_MF <- resannot_MF[order(resannot_MF$logFC, decreasing = T),]
+trend_MF <-sapply(resannot_MF$logFC, function(x){if(x>0) 'up' else 'down'})
 pre_ranked_sig_genes_MF <- data.frame(resannot_MF, 'trend' = trend_MF, 'rank' = 1:nrow(resannot_MF), stringsAsFactors = F)
 to_be_point_out_MF <- rbind(pre_ranked_sig_genes_MF[pre_ranked_sig_genes_MF$Gene.symbol == "CD24", ], pre_ranked_sig_genes_MF[pre_ranked_sig_genes_MF$Gene.symbol == "CD47", ])
 
